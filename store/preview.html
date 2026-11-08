@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Faceit CS2 Predictor — preview</title>
+  <link rel="stylesheet" href="/chrome_extension/styles.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; }
+    body {
+      background: #080b10;
+      color: #e6edf3;
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(820px 620px at 10% 8%, rgba(255, 85, 0, 0.20), transparent 62%),
+        radial-gradient(900px 700px at 95% 92%, rgba(31, 111, 235, 0.14), transparent 64%),
+        linear-gradient(160deg, #0b1016 0%, #0d1117 55%, #090c10 100%);
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: radial-gradient(circle at 30% 40%, #000 0%, transparent 72%);
+    }
+    .hero {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      height: 100%;
+      padding: 0 0 0 72px;
+    }
+    .left { width: 610px; }
+    .brand { display: flex; align-items: center; gap: 13px; }
+    .brand img { width: 46px; height: 46px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.45); }
+    .brand-name { font-size: 15px; font-weight: 700; letter-spacing: .2px; }
+    .brand-name span { color: #ff6b1a; }
+    .badge {
+      display: inline-block;
+      margin-top: 30px;
+      padding: 4px 10px;
+      border: 1px solid rgba(255, 107, 26, .45);
+      border-radius: 999px;
+      color: #ff9a5c;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 16px 0 18px;
+      font-size: 54px;
+      line-height: 1.02;
+      letter-spacing: -1.8px;
+      font-weight: 800;
+    }
+    h1 span { color: #ff6b1a; }
+    .lead {
+      max-width: 560px;
+      margin: 0 0 24px;
+      color: #9aa7b4;
+      font-size: 16.5px;
+      line-height: 1.55;
+    }
+    ul { margin: 0; padding: 0; list-style: none; }
+    li {
+      margin: 11px 0;
+      color: #c9d1d9;
+      font-size: 14.5px;
+    }
+    li::before {
+      content: "▸";
+      margin-right: 10px;
+      color: #ff6b1a;
+      font-weight: 700;
+    }
+    .foot {
+      position: fixed;
+      left: 72px;
+      bottom: 30px;
+      color: #5b6673;
+      font-size: 11px;
+      letter-spacing: .2px;
+    }
+    #fai-hud {
+      top: 32px !important;
+      right: 40px !important;
+      max-height: calc(100vh - 64px) !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <div class="left">
+      <div class="brand">
+        <img src="/chrome_extension/icon.png" alt="">
+        <div class="brand-name">Faceit <span>CS2 Predictor</span></div>
+      </div>
+      <div class="badge" id="badge">CS2 · FACEIT MATCH ROOMS</div>
+      <h1 id="title">Прогноз, который<br>видит <span>лобби</span></h1>
+      <p class="lead" id="lead">ML-прогноз победы, статы всех 10 игроков и вето-помощник — прямо в комнате матча FACEIT.</p>
+      <ul id="points">
+        <li>Вероятность победы по CatBoost — подписана командой</li>
+        <li>ELO, K/D, ADR, HS и стрик каждого игрока</li>
+        <li>Флаги: смурф, руинер, калибровка, новичок</li>
+        <li>Вето: что банить, на чём играть и запасная карта</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot">Не связано с FACEIT Ltd. FACEIT — товарный знак FACEIT Ltd.</div>
+
+  <script>
+    const VIEW = new URLSearchParams(location.search).get('view') || 'top';
+    history.replaceState({}, '', '/ru/cs2/room/1-store-preview');
+    sessionStorage.clear();
+
+    if (VIEW === 'veto') {
+      document.getElementById('badge').textContent = 'VETO HELPER';
+      document.getElementById('title').innerHTML = 'Вето по последним<br><span>50 матчам</span>';
+      document.getElementById('lead').textContent = 'Винрейт и ADR по каждой карте для обеих команд — без ручного подсчёта и таблиц в блокноте.';
+      document.getElementById('points').innerHTML = [
+        '<li>3 или 4 бана в зависимости от размера пула</li>',
+        '<li>Лучшая и запасная карта для вашей команды</li>',
+        '<li>Сглаженный винрейт — малые выборки не врут</li>',
+        '<li>Сводка для Discord в один клик</li>',
+      ].join('');
+    }
+
+    const realFetch = window.fetch.bind(window);
+    const MAP_POOL = ['de_ancient', 'de_anubis', 'de_dust2', 'de_inferno', 'de_mirage', 'de_nuke', 'de_vertigo', 'de_cache'];
+    const MAP_P1 = { de_ancient: 0.3, de_anubis: 0.7, de_dust2: 0.45, de_inferno: 0.4, de_mirage: 0.8, de_nuke: 0.35, de_vertigo: 0.55, de_cache: 0.5 };
+    const MAP_P2 = { de_ancient: 0.8, de_anubis: 0.4, de_dust2: 0.55, de_inferno: 0.6, de_mirage: 0.25, de_nuke: 0.75, de_vertigo: 0.55, de_cache: 0.55 };
+
+    const names1 = ['-J0ker', 'm1lky', 'n0va', 'krosh', 'coldwntr666'];
+    const names2 = ['otec_ak', 'batareechkaa', 's1mple_fan', 'zzz', 'younggod'];
+    const r1 = names1.map((nickname, i) => ({ id: 'p' + i, nickname, partyId: null, elo: 1240 + i * 18, gameSkillLevel: 8 }));
+    const r2 = names2.map((nickname, i) => ({ id: 'p' + (i + 5), nickname, partyId: null, elo: 1080 + i * 12, gameSkillLevel: 6 }));
+
+    const MATCH = {
+      payload: {
+        id: '1-store-preview',
+        voting: { map: { entities: MAP_POOL.map((m) => ({ class_name: m, game_map_id: m })), pick: ['de_mirage'] } },
+        teams: {
+          faction1: { name: 'team_Alpha', roster: r1 },
+          faction2: { name: 'team_Beta', roster: r2 },
+        },
+      },
+    };
+
+    function lifetimeFor(id) {
+      const idx = Number(String(id).replace('p', ''));
+      const t1 = idx < 5;
+      const kd = id === 'p8' ? 1.52 : (t1 ? 1.18 + idx * 0.02 : 0.94 + (idx - 5) * 0.02);
+      const adr = id === 'p8' ? 86 : (t1 ? 84 + idx : 73 + (idx - 5));
+      const wr = id === 'p8' ? 62 : (t1 ? 56 + idx : 44 + (idx - 5));
+      return {
+        lifetime: {
+          updated_at: Date.now() - 3600000,
+          k5: kd.toFixed(2),
+          k17: adr.toFixed(1),
+          k8: t1 ? '49' : '41',
+          k6: wr.toFixed(1),
+          m1: id === 'p8' ? '60' : (t1 ? '1200' : '900'),
+          s0: id === 'p7' ? ['0', '0', '0', '0', '0'] : (t1 ? ['0', '1', '1', '1'] : ['1', '0', '1', '0', '1']),
+        },
+      };
+    }
+
+    function historyFor(id) {
+      const idx = Number(String(id).replace('p', ''));
+      const probs = idx < 5 ? MAP_P1 : MAP_P2;
+      const out = [];
+      let n = 0;
+      for (const map of MAP_POOL) {
+        const wins = Math.round(7 * probs[map]);
+        for (let k = 0; k < 7; k++) {
+          const win = k < wins;
+          out.push({
+            matchId: '1-preview-' + id + '-' + n,
+            elo: String(1200 + idx * 10),
+            elo_delta: win ? '25' : '-25',
+            i1: map,
+            c10: (win ? 88 : 71).toFixed(1),
+            c2: win ? '1.30' : '0.85',
+            date: Date.now() - n * 3600000,
+          });
+          n++;
+        }
+      }
+      return out;
+    }
+
+    function json(data) {
+      return Promise.resolve({ ok: true, status: 200, json: async () => data });
+    }
+
+    window.fetch = (url, opts) => {
+      const u = String(url);
+      if (!u.includes('faceit.com/api')) return realFetch(url, opts);
+      if (u.includes('/match/v2/match/')) return json(MATCH);
+      const hm = u.match(/\/stats\/v1\/stats\/time\/users\/([^/]+)\/games\/cs2/);
+      if (hm) return json(historyFor(hm[1]));
+      const lm = u.match(/\/stats\/v1\/stats\/users\/([^/]+)\/games\/cs2/);
+      if (lm) return json(lifetimeFor(lm[1]));
+      if (u.includes('/users/v1/users/')) return json({ payload: { games: { cs2: {} } } });
+      return Promise.resolve({ ok: false, status: 404, json: async () => ({}) });
+    };
+
+    window.chrome = {
+      runtime: {
+        getURL: (p) => '/chrome_extension/' + p,
+        onMessage: { addListener: () => {} },
+      },
+    };
+
+    if (VIEW === 'veto') {
+      const timer = setInterval(() => {
+        const body = document.querySelector('.fai-body');
+        const veto = document.getElementById('fai-veto');
+        if (body && veto && veto.querySelector('.fai-veto-table') && !document.querySelector('.fai-veto-prog')) {
+          document.querySelectorAll('.fai-team').forEach((el) => { el.style.display = 'none'; });
+          body.scrollTop = 0;
+          clearInterval(timer);
+        }
+      }, 500);
+    } else {
+      const timer = setInterval(() => {
+        const veto = document.getElementById('fai-veto');
+        if (veto && veto.querySelector('.fai-veto-table') && !document.querySelector('.fai-veto-prog')) {
+          veto.style.display = 'none';
+          clearInterval(timer);
+        }
+      }, 500);
+    }
+  </script>
+  <script src="/chrome_extension/content.js"></script>
+</body>
+</html>

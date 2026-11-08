@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "CS2 Pro Predictor (HLTV)",
+  "version": "0.2.0",
+  "description": "Прогноз модели на реальных матчах HLTV, live-пересчёт по ходу серии, разбор вето и винрейты команд по картам. Не связано с HLTV.",
+  "permissions": [],
+  "content_scripts": [
+    {
+      "matches": ["*://www.hltv.org/matches/*", "*://hltv.org/matches/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["model_hltv.json", "team_ratings.json"],
+      "matches": ["*://www.hltv.org/*", "*://hltv.org/*"]
+    }
+  ],
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}

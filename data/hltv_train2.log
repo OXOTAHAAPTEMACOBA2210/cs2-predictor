@@ -1,0 +1,36 @@
+матчей после чистки: 28415 2023-05-18 -> 2026-11-08
+train 24005 / val 1136 / test 3274
+деревьев: 52
+catboost (test)        acc 0.6484  auc 0.6960  logloss 0.6266  brier 0.2186
+baseline elo>0 (test)  acc 0.6442  auc 0.6897  logloss 0.6304  brier 0.2204
+baseline always t1 (test) acc 0.5571  auc 0.5000  logloss 0.6931  brier 0.2500
+
+калибровка на test (децили предсказания):
+  P=0.31  факт=0.26  n=328
+  P=0.40  факт=0.37  n=328
+  P=0.46  факт=0.45  n=328
+  P=0.50  факт=0.47  n=328
+  P=0.53  факт=0.54  n=327
+  P=0.58  факт=0.60  n=327
+  P=0.62  факт=0.62  n=327
+  P=0.67  факт=0.68  n=327
+  P=0.72  факт=0.73  n=327
+  P=0.80  факт=0.86  n=327
+
+важность признаков:
+  elo_diff      65.9%
+  log_n_diff    22.0%
+  rest_diff      4.8%
+  n30_diff       2.6%
+  form10_diff    2.5%
+  form5_diff     1.9%
+  is_bo5         0.4%
+  is_bo1         0.0%
+catboost (test, stars>=1) acc 0.6424  auc 0.6788  logloss 0.6394  brier 0.2236
+baseline elo (stars>=1) acc 0.6395  auc 0.6834  logloss 0.6376  brier 0.2231
+
+модель: C:\Users\mrspa\Downloads\антигравити\faceit_ml_project\hltv_extension\model_hltv.json деревьев 52
+рейтинги: C:\Users\mrspa\Downloads\антигравити\faceit_ml_project\hltv_extension\team_ratings.json команд 2099 meta {'matches': 28415, 'trees': 52, 'features': ['elo_diff', 'form5_diff', 'form10_diff', 'rest_diff', 'n30_diff', 'log_n_diff', 'is_bo1', 'is_bo5'], 'train_from': '2023-05-18', 'test_from': '2026-08-01', 'test_n': 3274, 'test_acc': 0.6484, 'test_auc': 0.696, 'test_brier': 0.2186, 'first_team_acc': 0.5571}
+probe 2026-08-01 Black Phoenix vs Butterfly P=0.471
+probe 2026-08-01 SINNERS vs INOX Division P=0.554
+probe 2026-08-01 Just Players vs Sashi P=0.481

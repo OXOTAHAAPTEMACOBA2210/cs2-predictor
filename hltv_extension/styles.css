@@ -1,0 +1,78 @@
+.hltv-pro {
+  background: #0d1117;
+  color: #c9d1d9;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 12px 0;
+  font: 13px/1.45 "Helvetica Neue", Arial, sans-serif;
+  max-width: 100%;
+}
+
+.hltv-pro .hp-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: #58a6ff;
+  margin-bottom: 8px;
+}
+
+.hltv-pro .hp-bo { font-weight: 400; color: #8b949e; font-size: 12px; }
+.hltv-pro .hp-veto { color: #c9d1d9; margin-bottom: 8px; font-size: 12px; }
+.hltv-pro .hp-veto b { color: #e6edf3; }
+.hltv-pro .hp-rec {
+  background: #161b22;
+  border-left: 3px solid #3fb950;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  border-radius: 3px;
+}
+.hltv-pro .hp-rec.hp-low { border-left-color: #8b949e; color: #8b949e; }
+.hltv-pro .hp-rec b { color: #e6edf3; }
+.hltv-pro .hp-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.hltv-pro .hp-table th {
+  text-align: left; padding: 5px 8px; border-bottom: 1px solid #30363d;
+  color: #8b949e; font-weight: 600;
+}
+.hltv-pro .hp-table td { padding: 5px 8px; border-bottom: 1px solid #21262d; }
+.hltv-pro .hp-map { color: #e6edf3; font-weight: 600; }
+.hltv-pro .hp-role { color: #8b949e; font-weight: 400; font-size: 11px; margin-left: 6px; }
+.hltv-pro .hp-g { color: #3fb950; font-weight: 700; }
+.hltv-pro .hp-r { color: #f85149; font-weight: 700; }
+.hltv-pro .hp-dim { color: #6e7681; }
+.hltv-pro .hp-games { color: #6e7681; }
+.hltv-pro .hp-good td { background: rgba(63, 185, 80, .08); }
+.hltv-pro .hp-mark {
+  font-size: 10px; padding: 1px 5px; border-radius: 3px;
+  border: 1px solid #30363d; color: #8b949e; margin-left: 4px;
+}
+.hltv-pro .hp-pick { border-color: #3fb950; color: #3fb950; }
+.hltv-pro .hp-ban { border-color: #f85149; color: #f85149; }
+.hltv-pro .hp-note { color: #6e7681; font-size: 11px; margin-top: 8px; }
+
+.hltv-pro .hp-pred {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-left: 3px solid #58a6ff;
+  border-radius: 3px;
+  padding: 9px 11px;
+  margin-bottom: 10px;
+}
+.hltv-pro .hp-pred.hp-low { border-left-color: #8b949e; color: #8b949e; }
+.hltv-pro .hp-pred.hp-live { border-left-color: #f85149; }
+.hltv-pro .hp-pred b { color: #e6edf3; }
+.hltv-pro .hp-pred-head {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  font-weight: 700; letter-spacing: .04em; color: #58a6ff; font-size: 12px; margin-bottom: 6px;
+}
+.hltv-pro .hp-pred.hp-live .hp-pred-head { color: #f85149; }
+.hltv-pro .hp-pred-main { display: flex; align-items: baseline; gap: 12px; }
+.hltv-pro .hp-pred-num { font-size: 26px; font-weight: 700; color: #e6edf3; line-height: 1.1; }
+.hltv-pro .hp-pred-txt { color: #c9d1d9; font-size: 12px; }
+.hltv-pro .hp-feats { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; font-size: 11px; color: #c9d1d9; }
+.hltv-pro .hp-f i { color: #8b949e; font-style: normal; margin-right: 4px; }
+.hltv-pro .hp-f em { color: #6e7681; font-style: normal; }
+.hltv-pro .hp-warn { color: #d29922; font-size: 11px; margin-top: 6px; }

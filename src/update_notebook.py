@@ -1,0 +1,262 @@
+# -*- coding: utf-8 -*-
+import json
+import os
+
+nb = {
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# **Курсовая работа: Предиктивный анализ исходов соревновательных матчей FACEIT (CS2)**\n",
+    "\n",
+    "**Автор:** Владислав Кузьменко (РГАУ-МСХА им. К.А. Тимирязева, 09.03.02 «Информационные системы и технологии»)\n",
+    "\n",
+    "**Цель исследования:** Обучение и сравнительный анализ моделей классификации (Logistic Regression, Random Forest, CatBoost) для предсказания исходов поединков на соревновательной платформе FACEIT с практической апробацией на реальном профиле игрока."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## **1. Установка зависимостей и загрузка данных**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": None,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# 1. Проверка и установка CatBoost (для Google Colab)\n",
+    "import sys, subprocess, os\n",
+    "try:\n",
+    "    import catboost\n",
+    "except ImportError:\n",
+    "    print('Установка библиотеки CatBoost...')\n",
+    "    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-q', 'catboost'])\n",
+    "    import catboost\n",
+    "\n",
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "import matplotlib.pyplot as plt\n",
+    "import seaborn as sns\n",
+    "from IPython.display import display\n",
+    "\n",
+    "# 2. Автоматический поиск датасета (в корне Colab или в папке data)\n",
+    "csv_candidates = ['faceit_matches.csv', 'data/faceit_matches.csv', '../data/faceit_matches.csv', 'faceit_ml_project/data/faceit_matches.csv']\n",
+    "csv_path = next((p for p in csv_candidates if os.path.exists(p)), None)\n",
+    "\n",
+    "if not csv_path:\n",
+    "    raise FileNotFoundError(\"Файл faceit_matches.csv не найден! Загрузите его во вкладку 'Файлы' слева.\")\n",
+    "\n",
+    "df = pd.read_csv(csv_path)\n",
+    "print(f\"[УСПЕХ] Датасет загружен из: {csv_path}\")\n",
+    "print(f\"Размерность выборки: {df.shape[0]} матчей, {df.shape[1]} признаков\")\n",
+    "df.head(5)\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## **2. Разведочный анализ данных (EDA)**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": None,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Корреляционная матрица ключевых дифференциальных признаков\n",
+    "diff_cols = ['elo_diff', 'kd_diff', 'adr_diff', 'map_winrate_diff', 'streak_diff', 'hs_diff', 'team_1_win']\n",
+    "plt.figure(figsize=(9, 6), dpi=150)\n",
+    "sns.heatmap(df[diff_cols].corr(), annot=True, fmt='.2f', cmap='coolwarm', square=True)\n",
+    "plt.title('Корреляционная матрица признаков матча FACEIT', fontsize=12, pad=12)\n",
+    "plt.show()\n",
+    "\n",
+    "# Распределение карт пула\n",
+    "plt.figure(figsize=(10, 4), dpi=150)\n",
+    "sns.countplot(data=df, x='map_name', hue='map_name', palette='mako', legend=False, order=df['map_name'].value_counts().index)\n",
+    "plt.title('Распределение матчей по картам соревновательного пула CS2', fontsize=12)\n",
+    "plt.xlabel('Карта')\n",
+    "plt.ylabel('Количество сыгранных матчей')\n",
+    "plt.show()\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## **3. Обучение и сравнительный анализ моделей машинного обучения**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": None,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn.model_selection import train_test_split\n",
+    "from sklearn.preprocessing import StandardScaler\n",
+    "from sklearn.linear_model import LogisticRegression\n",
+    "from sklearn.ensemble import RandomForestClassifier\n",
+    "from catboost import CatBoostClassifier\n",
+    "from sklearn.metrics import accuracy_score, f1_score, roc_auc_score\n",
+    "\n",
+    "# 1. One-Hot Encoding категориального признака карт\n",
+    "df_enc = pd.get_dummies(df, columns=['map_name'], drop_first=True)\n",
+    "feature_cols = [c for c in df_enc.columns if c not in ['match_id', 'team_1_win']]\n",
+    "X = df_enc[feature_cols]\n",
+    "y = df_enc['team_1_win']\n",
+    "\n",
+    "# 2. Разбиение выборки 80/20 со стратификацией\n",
+    "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)\n",
+    "scaler = StandardScaler()\n",
+    "X_tr_sc = scaler.fit_transform(X_train)\n",
+    "X_te_sc = scaler.transform(X_test)\n",
+    "\n",
+    "# 3. Обучение моделей\n",
+    "models = {\n",
+    "    'Logistic Regression': (LogisticRegression(max_iter=1000), X_tr_sc, X_te_sc),\n",
+    "    'Random Forest': (RandomForestClassifier(n_estimators=250, max_depth=12, random_state=42), X_train, X_test),\n",
+    "    'CatBoost': (CatBoostClassifier(iterations=400, learning_rate=0.05, depth=6, verbose=0, random_seed=42), X_train, X_test)\n",
+    "}\n",
+    "\n",
+    "trained_models = {}\n",
+    "metrics_data = []\n",
+    "\n",
+    "for name, (clf, xtr, xte) in models.items():\n",
+    "    clf.fit(xtr, y_train)\n",
+    "    preds = clf.predict(xte)\n",
+    "    probs = clf.predict_proba(xte)[:, 1]\n",
+    "    acc = accuracy_score(y_test, preds)\n",
+    "    f1 = f1_score(y_test, preds)\n",
+    "    auc = roc_auc_score(y_test, probs)\n",
+    "    trained_models[name] = clf\n",
+    "    metrics_data.append({'Модель': name, 'Accuracy': round(acc, 4), 'F1-Score': round(f1, 4), 'ROC-AUC': round(auc, 4)})\n",
+    "\n",
+    "cb_model = trained_models['CatBoost']\n",
+    "metrics_df = pd.DataFrame(metrics_data)\n",
+    "display(metrics_df)\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## **4. Практическая апробация: Предиктивный анализ реального профиля игрока (-J0ker)**\n",
+    "\n",
+    "Проверка обученной модели CatBoost на реальных соревновательных данных Владислава:\n",
+    "- **Никнейм:** `-J0ker` (в игре: `V L A D O S _ R O Y C E`)\n",
+    "- **Дивизион:** 4 LVL (987 ELO), 868 сыгранных матчей (415 побед, винрейт 47.81%)\n",
+    "- **Индивидуальные метрики:** K/D 0.93, ADR 76.53, HS% 40.0%\n",
+    "\n",
+    "Модель прогнозирует вероятность победы в зависимости от выбора карты и формата лобби (соло vs дуо)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": None,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Анализ вероятности победы для профиля -J0ker\n",
+    "maps = ['de_anubis', 'de_ancient', 'de_dust2', 'de_mirage', 'de_inferno', 'de_nuke', 'de_vertigo']\n",
+    "display_maps = ['Anubis', 'Ancient', 'Dust II', 'Mirage', 'Inferno', 'Nuke', 'Vertigo']\n",
+    "map_wrs = {'de_anubis': 56.20, 'de_ancient': 49.50, 'de_dust2': 48.72, 'de_mirage': 47.01, 'de_inferno': 42.03, 'de_nuke': 40.96, 'de_vertigo': 25.00}\n",
+    "\n",
+    "solo_preds = []\n",
+    "duo_preds = []\n",
+    "\n",
+    "for m in maps:\n",
+    "    # 1. Solo Queue (случайные напарники ~990 ELO)\n",
+    "    row_solo = {c: 0.0 for c in feature_cols}\n",
+    "    team1_elo = 989.4\n",
+    "    team2_elo = 990.0\n",
+    "    team1_kd = 0.97\n",
+    "    team2_kd = 0.98\n",
+    "    team1_adr = 76.1\n",
+    "    team2_adr = 76.0\n",
+    "    team1_hs = 41.6\n",
+    "    team2_hs = 42.0\n",
+    "    team1_mwr = (map_wrs[m] + 4 * 50.0) / 5.0\n",
+    "    \n",
+    "    row_solo['team_1_avg_elo'] = team1_elo\n",
+    "    row_solo['team_2_avg_elo'] = team2_elo\n",
+    "    row_solo['elo_diff'] = team1_elo - team2_elo\n",
+    "    row_solo['team_1_elo_std'] = 80.0\n",
+    "    row_solo['team_2_elo_std'] = 80.0\n",
+    "    row_solo['elo_std_diff'] = 0.0\n",
+    "    row_solo['team_1_avg_kd'] = team1_kd\n",
+    "    row_solo['team_2_avg_kd'] = team2_kd\n",
+    "    row_solo['kd_diff'] = team1_kd - team2_kd\n",
+    "    row_solo['team_1_avg_adr'] = team1_adr\n",
+    "    row_solo['team_2_avg_adr'] = team2_adr\n",
+    "    row_solo['adr_diff'] = team1_adr - team2_adr\n",
+    "    row_solo['team_1_hs_rate'] = team1_hs\n",
+    "    row_solo['team_2_hs_rate'] = team2_hs\n",
+    "    row_solo['hs_diff'] = team1_hs - team2_hs\n",
+    "    row_solo['team_1_map_winrate'] = team1_mwr\n",
+    "    row_solo['team_2_map_winrate'] = 50.0\n",
+    "    row_solo['map_winrate_diff'] = team1_mwr - 50.0\n",
+    "    row_solo['team_1_streak'] = 0.0\n",
+    "    row_solo['team_2_streak'] = 0.0\n",
+    "    row_solo['streak_diff'] = 0.0\n",
+    "    row_solo['team_1_avg_matches'] = (868 + 4 * 700) / 5.0\n",
+    "    row_solo['team_2_avg_matches'] = 700.0\n",
+    "    if f'map_name_{m}' in row_solo:\n",
+    "        row_solo[f'map_name_{m}'] = 1.0\n",
+    "        \n",
+    "    p_solo = cb_model.predict_proba(pd.DataFrame([row_solo]))[0, 1]\n",
+    "    solo_preds.append(p_solo * 100)\n",
+    "    \n",
+    "    # 2. Duo Queue (Владислав + проверенный партнер KD 1.15, ELO 1050)\n",
+    "    row_duo = row_solo.copy()\n",
+    "    row_duo['team_1_avg_elo'] = 1001.4\n",
+    "    row_duo['elo_diff'] = 11.4\n",
+    "    row_duo['team_1_avg_kd'] = 1.004\n",
+    "    row_duo['kd_diff'] = 0.024\n",
+    "    row_duo['team_1_avg_adr'] = 77.8\n",
+    "    row_duo['adr_diff'] = 1.8\n",
+    "    row_duo['team_1_map_winrate'] = (map_wrs[m] + 55.0 + 3 * 50.0) / 5.0\n",
+    "    row_duo['map_winrate_diff'] = row_duo['team_1_map_winrate'] - 50.0\n",
+    "    \n",
+    "    p_duo = cb_model.predict_proba(pd.DataFrame([row_duo]))[0, 1]\n",
+    "    duo_preds.append(p_duo * 100)\n",
+    "\n",
+    "res_df = pd.DataFrame({\n",
+    "    'Карта': display_maps,\n",
+    "    'Винрейт игрока (%)': [map_wrs[m] for m in maps],\n",
+    "    'P(Win) Solo Queue (%)': [round(x, 2) for x in solo_preds],\n",
+    "    'P(Win) Duo Queue (%)': [round(x, 2) for x in duo_preds]\n",
+    "})\n",
+    "display(res_df)\n",
+    "\n",
+    "# Визуализация\n",
+    "plt.figure(figsize=(10, 4.5), dpi=150)\n",
+    "plt.plot(display_maps, solo_preds, marker='o', linewidth=2.5, color='#2980b9', label='Solo Queue (Соло-поиск)')\n",
+    "plt.plot(display_maps, duo_preds, marker='s', linewidth=2.5, color='#27ae60', linestyle='--', label='Duo Queue (с напарником K/D 1.15)')\n",
+    "plt.axhline(50, color='gray', linestyle=':', label='Баланс 50%')\n",
+    "plt.title('Предиктивный прогноз исхода матча моделью CatBoost для профиля -J0ker', fontsize=12)\n",
+    "plt.ylabel('Вероятность победы P(Win) (%)')\n",
+    "plt.legend()\n",
+    "plt.show()\n"
+   ]
+  }
+ ],
+ "metadata": {
+  "language_info": {
+   "name": "python"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
+
+nb_path = r"c:\Users\mrspa\Downloads\антигравити\faceit_ml_project\notebooks\faceit_coursework.ipynb"
+with open(nb_path, "w", encoding="utf-8") as f:
+    json.dump(nb, f, ensure_ascii=False, indent=1)
+
+print("[УСПЕХ] Обновленный блокнот записан!")

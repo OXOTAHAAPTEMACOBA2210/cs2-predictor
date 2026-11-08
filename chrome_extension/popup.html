@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Faceit CS2 Predictor</title>
+  <style>
+    body {
+      width: 300px;
+      margin: 0;
+      padding: 14px;
+      background: #0d1117;
+      color: #e6edf3;
+      font: 13px/1.5 "Segoe UI", Roboto, Arial, sans-serif;
+    }
+    h2 { margin: 0 0 8px; font-size: 15px; color: #ff5500; }
+    p { margin: 0 0 8px; color: #8b949e; font-size: 12px; }
+    .status {
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: #161b22;
+      border: 1px solid #30363d;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+    .status.ok { border-color: #238636; color: #3fb950; }
+    .status.wait { border-color: #9e6a03; color: #d29922; }
+    a {
+      display: block;
+      text-align: center;
+      padding: 8px;
+      border-radius: 6px;
+      background: #ff5500;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 12px;
+    }
+    .foot { margin-top: 10px; color: #6e7681; font-size: 10.5px; text-align: center; }
+  </style>
+</head>
+<body>
+  <h2>Faceit CS2 Predictor</h2>
+  <div id="status" class="status">Проверяю вкладку…</div>
+  <p>Открой комнату матча (или зайди в лобби) — панель с прогнозом появится сама, справа сверху. Внутри: шанс победы по CatBoost, статы всех 10 игроков, флаги «смурф / руинер», вето-помощник и кнопка «Скопировать сводку» для Discord.</p>
+  <a href="https://www.faceit.com/ru/cs2" target="_blank">Открыть FACEIT</a>
+  <div class="foot">Не связано с FACEIT Ltd. · модель встроена</div>
+  <script src="popup.js"></script>
+</body>
+</html>

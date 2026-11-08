@@ -1,0 +1,26 @@
+{
+  "Логистическая регрессия": {
+    "Accuracy": 0.646,
+    "Precision": 0.6471,
+    "Recall": 0.6548,
+    "F1-Score": 0.6509,
+    "ROC-AUC": 0.7087,
+    "Log-Loss": 0.6238
+  },
+  "Случайный лес (Random Forest)": {
+    "Accuracy": 0.6447,
+    "Precision": 0.6444,
+    "Recall": 0.6581,
+    "F1-Score": 0.6512,
+    "ROC-AUC": 0.701,
+    "Log-Loss": 0.6303
+  },
+  "CatBoost Classifier": {
+    "Accuracy": 0.6473,
+    "Precision": 0.6472,
+    "Recall": 0.6601,
+    "F1-Score": 0.6536,
+    "ROC-AUC": 0.7039,
+    "Log-Loss": 0.629
+  }
+}

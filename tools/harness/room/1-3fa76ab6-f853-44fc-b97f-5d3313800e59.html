@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>stand</title>
+<link rel="stylesheet" href="../../../chrome_extension/styles.css">
+<style>body{background:#0d1117;color:#c9d1d9;font:12px monospace}#report{white-space:pre-wrap}</style>
+</head>
+<body>
+<pre id="report">boot…</pre>
+<script src="../stub.js"></script>
+<script>
+const MATCH_ID = location.pathname.match(/\/room\/(\d-[0-9a-zA-Z-]+)/)[1];
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function snapshot() {
+  const h = document.getElementById('fai-hud');
+  if (!h) return null;
+  const q = (s) => {
+    const n = h.querySelector(s);
+    return n ? n.textContent.trim().replace(/\s+/g, ' ') : null;
+  };
+  return {
+    prob: q('.fai-prob'),
+    label: q('.fai-label'),
+    of: q('.fai-of'),
+    meta: [...h.querySelectorAll('.fai-meta span')].map((n) => n.textContent.trim().replace(/\s+/g, ' ')),
+    partial: !!h.querySelector('.fai-verdict.fai-partial'),
+    warns: [...h.querySelectorAll('.fai-warn')].map((n) => n.textContent.trim().replace(/\s+/g, ' ')),
+    rows: h.querySelectorAll('.fai-table tbody tr').length,
+    veto: (() => {
+      const v = h.querySelector('#fai-veto');
+      if (!v) return null;
+      const t = (s) => { const n = v.querySelector(s); return n ? n.textContent.trim().replace(/\s+/g, ' ') : null; };
+      const ban = v.querySelector('.fai-ban-line'), pickL = v.querySelector('.fai-pick-line');
+      return {
+        rec: t('.fai-veto-rec'),
+        bans: ban ? ban.textContent.trim().replace(/\s+/g, ' ') : null,
+        pick: pickL ? pickL.textContent.trim().replace(/\s+/g, ' ') : null,
+        okRows: [...v.querySelectorAll('.fai-veto-table tbody tr')]
+          .filter((tr) => !tr.querySelector('.fai-tag.low'))
+          .map((tr) => tr.children[0].textContent.trim()),
+      };
+    })(),
+  };
+}
+
+async function waitSettled(timeout) {
+  const t0 = Date.now();
+  for (;;) {
+    const h = document.getElementById('fai-hud');
+    if (h && h.querySelector('.fai-label') && !h.querySelector('.fai-progress')) {
+      await wait(200);
+      return true;
+    }
+    if (Date.now() - t0 > timeout) return false;
+    await wait(100);
+  }
+}
+
+async function pass(label) {
+  window.__copied = null;
+  window.__faiScoutLoaded = false;
+  document.getElementById('fai-hud') && document.getElementById('fai-hud').remove();
+  await new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = '../../../chrome_extension/content.js';
+    s.onload = res;
+    s.onerror = rej;
+    document.body.appendChild(s);
+  });
+  const ok = await waitSettled(60000);
+  const snap = snapshot();
+  const btn = document.querySelector('#fai-hud .fai-copy');
+  if (btn) { btn.click(); await wait(150); }
+  return { label, settled: ok, snap, copy: window.__copied };
+}
+
+(async () => {
+  const log = [];
+  try {
+    const fx = await (await fetch('../fixtures/match-' + MATCH_ID + '.json')).json();
+    await window.bootHarness(fx, MATCH_ID);
+    log.push('case=' + window.__case + ' fixtures=' + Object.keys(fx).length);
+    log.push(await pass('первый прогон'));
+    log.push(await pass('второй прогон'));
+    log.push('ключей в хранилище: ' + Object.keys(window.__faiStorage).length);
+    log.push('unmatched api: ' + JSON.stringify([...new Set(window.__missing)]));
+    document.getElementById('report').textContent =
+      'FAI_STAND ' + JSON.stringify(log, null, 1);
+  } catch (e) {
+    document.getElementById('report').textContent =
+      'FAI_STAND ' + JSON.stringify({ error: String(e && e.message || e), log }, null, 1);
+  }
+})();
+</script>
+</body>
+</html>

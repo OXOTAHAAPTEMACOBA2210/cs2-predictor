@@ -1,0 +1,16 @@
+1-dbce73e5-2f4b-45 de_inferno   P(f1)= 67.4%  P(me)= 67.4%  faceit=0.5  score=16:14  winner=faction1
+1-b533aa16-de0c-4c de_ancient   P(f1)= 42.3%  P(me)= 42.3%  faceit=0.5  score=6:13  winner=faction2
+1-5a967e9d-5db1-4a de_dust2     P(f1)= 60.1%  P(me)= 39.9%  faceit=0.5  score=13:16  winner=faction2
+1-02d8e00c-8f9e-45 de_dust2     P(f1)= 51.7%  P(me)= 51.7%  faceit=0.5  score=11:13  winner=faction2
+1-8c184ddc-2525-45 de_anubis    P(f1)= 37.1%  P(me)= 37.1%  faceit=0.5  score=13:8  winner=faction1
+1-e24be18d-8764-4e de_cache     P(f1)= 36.4%  P(me)= 63.6%  faceit=0.5  score=16:19  winner=faction2
+1-28b82d60-0ff8-44 de_dust2     P(f1)= 41.1%  P(me)= 41.1%  faceit=0.5  score=13:10  winner=faction1
+1-c7477fa7-8809-40 de_anubis    P(f1)= 61.7%  P(me)= 61.7%  faceit=0.5  score=13:6  winner=faction1
+
+Матчей в выборке: 8
+Модель угадала победителя: 4 из 8 = 50.0%
+Brier score (0.25 = монетка, меньше — лучше): 0.2419
+Средняя P(me): 50.6%  |  реальных побед: 75.0%
+  P(me) в [50, 60): 1 матч(ов), победили в 0%
+  P(me) в [60, 70): 3 матч(ов), победили в 100%
+Результат: C:\Users\mrspa\Downloads\антигравити\faceit_ml_project\data\backtest_result.json
