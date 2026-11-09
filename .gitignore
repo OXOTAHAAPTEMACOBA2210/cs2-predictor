@@ -3,3 +3,9 @@ __pycache__/
 catboost_info/
 data/backtest_cache/
 data/explain_cache/
+latex/
+notebooks/
+figures/
+faceit_coursework_latex.zip
+ЧТО_ДОБАВЛЕНО_ПОСЛЕ_ГРАФИКОВ.*
+ШПОРА_ДЛЯ_ЗАЩИТЫ_COLAB.md
